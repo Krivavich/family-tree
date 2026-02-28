@@ -138,6 +138,43 @@ Copy-Item .env.example .env
 
 > Начиная с этой ревизии, `config/settings.py` автоматически подхватывает `.env` через `config/env.py`.
 
+### 11.2.1 Если PowerShell пишет, что `.env.example` не существует
+
+Ошибка вида:
+`Copy-Item : Не удается найти путь ... .env.example`
+
+Проверьте и исправьте так:
+
+```powershell
+cd C:\Projects\family-tree
+git status
+git pull
+
+# проверить, есть ли файл в репозитории
+Test-Path .env.example
+
+# восстановить файл из текущего коммита (если случайно удалили локально)
+git checkout HEAD -- .env.example
+
+# снова создать .env
+Copy-Item .env.example .env
+```
+
+Если `Test-Path .env.example` всё ещё возвращает `False`, значит у вас не тот репозиторий/ветка. Проверьте `git remote -v` и `git branch`.
+
+Альтернатива: используйте автоматический скрипт `scripts/setup-local.ps1`, который сам пытается восстановить `.env.example` и продолжить запуск.
+
+```powershell
+cd C:\Projects\family-tree
+powershell -ExecutionPolicy Bypass -File .\scripts\setup-local.ps1
+```
+
+Для режима с Docker-инфрой:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\setup-local.ps1 -UseDocker
+```
+
 ### 11.3 Вариант A: быстрый локальный старт на SQLite (без контейнеров)
 ```powershell
 cd C:\Projects\family-tree
