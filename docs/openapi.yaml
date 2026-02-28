@@ -1,0 +1,95 @@
+openapi: 3.0.3
+info:
+  title: Family Tree API
+  version: 1.3.0
+  description: Security-hardened API with production-oriented 2FA, trusted devices, merge-flow and media safeguards.
+servers:
+  - url: /api
+paths:
+  /auth/token/:
+    post:
+      summary: Step1 login (username/password), uses trusted device token or triggers 2FA challenge
+      responses:
+        '200': { description: 2FA challenge created or JWT issued via trusted device }
+        '401': { description: Invalid credentials }
+        '429': { description: Too many 2FA requests }
+  /auth/2fa/verify/:
+    post:
+      summary: Verify 2FA (TOTP or challenge code) and issue access/refresh tokens
+      responses:
+        '200': { description: OK }
+        '400': { description: Invalid/expired code }
+  /auth/token/refresh/:
+    post:
+      summary: Refresh JWT token
+      responses:
+        '200': { description: OK }
+  /auth/logout/:
+    post:
+      summary: Blacklist refresh token
+      responses:
+        '205': { description: Logged out }
+  /persons/:
+    get:
+      summary: List persons from trees available to current user
+      responses:
+        '200': { description: OK }
+    post:
+      summary: Create person (owner/editor)
+      responses:
+        '201': { description: Created }
+        '403': { description: Forbidden }
+  /relationships/:
+    get:
+      summary: List relationships
+      responses:
+        '200': { description: OK }
+    post:
+      summary: Create relationship (owner/editor)
+      responses:
+        '201': { description: Created }
+  /proposed-changes/:
+    get:
+      summary: List proposed changes
+      responses:
+        '200': { description: OK }
+    post:
+      summary: Submit proposed change
+      responses:
+        '201': { description: Created }
+  /proposed-changes/{id}/approve/:
+    post:
+      summary: Approve and transactionally apply proposed change (owner only)
+      responses:
+        '200': { description: Approved }
+  /proposed-changes/{id}/reject/:
+    post:
+      summary: Reject proposed change (owner only)
+      responses:
+        '200': { description: Rejected }
+components:
+  schemas:
+    TokenObtainWith2FA:
+      type: object
+      required: [username, password]
+      properties:
+        username: { type: string }
+        password: { type: string }
+        device_id: { type: integer }
+        trusted_device_token: { type: string }
+    TwoFactorVerify:
+      type: object
+      required: [username, code]
+      properties:
+        username: { type: string }
+        code: { type: string }
+        device_id: { type: integer }
+        trust_this_device: { type: boolean }
+    ProposedChange:
+      type: object
+      required: [tree, target_model, target_id, change_payload]
+      properties:
+        tree: { type: integer }
+        target_model: { type: string }
+        target_id: { type: integer }
+        change_payload: { type: object }

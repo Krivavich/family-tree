@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}Карточка человека | Family Tree{% endblock %}
+{% block content %}
+<div class="card glass">
+  <h1>Карточка человека</h1>
+  <p class="muted">Добавьте факты, приватность и биографию участника.</p>
+  <form method="post">{% csrf_token %}
+    {{ form.as_p }}
+    <div class="row">
+      <button type="submit" class="btn">Сохранить</button>
+      <a href="/" class="btn btn-soft">Отмена</a>
+    </div>
+  </form>
+</div>
+{% endblock %}
