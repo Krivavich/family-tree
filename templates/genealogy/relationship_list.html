@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}Связи | Family Tree{% endblock %}
+{% block content %}
+<div class="card glass row" style="justify-content:space-between;">
+  <div>
+    <h1 style="margin-bottom:6px;">Родственные связи</h1>
+    <div class="muted">Граф взаимосвязей внутри доступных деревьев.</div>
+  </div>
+  <a class="btn" href="/relationships/new/">+ Добавить связь</a>
+</div>
+{% for rel in object_list %}
+  <div class="card glass">{{ rel.from_person }} → <strong>{{ rel.get_relation_type_display }}</strong> → {{ rel.to_person }}</div>
+{% empty %}
+  <div class="card glass">Связей пока нет.</div>
+{% endfor %}
+{% endblock %}
