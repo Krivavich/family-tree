@@ -1,32 +1,52 @@
-from django.contrib.auth import get_user_model
+from datetime import timedelta
+
+from django.conf import settings
+from django.contrib.auth import authenticate, get_user_model
+from django.utils import timezone
 from rest_framework import permissions, serializers, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.tokens import RefreshToken
-from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
+from rest_framework_simplejwt.views import TokenRefreshView
 
 from .models import TwoFactorCode
 
 
-class TokenObtainWith2FAView(TokenObtainPairView):
-    """Step 1: username/password -> issue 2FA challenge code (demo: returned in response)."""
+class TokenObtainWith2FASerializer(serializers.Serializer):
+    username = serializers.CharField()
+    password = serializers.CharField(trim_whitespace=False)
 
-    def post(self, request, *args, **kwargs):
-        response = super().post(request, *args, **kwargs)
-        username = request.data.get("username")
-        user = get_user_model().objects.filter(username=username).first()
+
+class TokenObtainWith2FAView(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request):
+        serializer = TokenObtainWith2FASerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        user = authenticate(
+            request=request,
+            username=serializer.validated_data["username"],
+            password=serializer.validated_data["password"],
+        )
         if not user:
             return Response({"detail": "Invalid credentials"}, status=status.HTTP_401_UNAUTHORIZED)
 
-        challenge = TwoFactorCode.issue_for_user(user)
-        return Response(
-            {
-                "requires_2fa": True,
-                "challenge_code": challenge.code,
-                "message": "Use /api/auth/2fa/verify/ to finalize login",
-            },
-            status=status.HTTP_200_OK,
-        )
+        latest = TwoFactorCode.objects.filter(user=user).order_by("-created_at").first()
+        if latest and latest.created_at > timezone.now() - timedelta(seconds=60):
+            return Response({"detail": "Please wait before requesting another 2FA code"}, status=status.HTTP_429_TOO_MANY_REQUESTS)
+
+        challenge, raw_code = TwoFactorCode.issue_for_user(user)
+        payload = {
+            "requires_2fa": True,
+            "challenge_id": challenge.id,
+            "message": "Use /api/auth/2fa/verify/ to finalize login",
+        }
+        if settings.DEBUG:
+            payload["debug_challenge_code"] = raw_code
+
+        return Response(payload, status=status.HTTP_200_OK)
 
 
 class TwoFactorVerifySerializer(serializers.Serializer):
@@ -63,3 +83,19 @@ class TwoFactorVerifyView(APIView):
 
 class TokenRefreshPublicView(TokenRefreshView):
     permission_classes = [permissions.AllowAny]
+
+
+class LogoutView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        refresh_token = request.data.get("refresh")
+        if not refresh_token:
+            return Response({"detail": "refresh token is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            token = RefreshToken(refresh_token)
+            token.blacklist()
+        except TokenError:
+            return Response({"detail": "Invalid refresh token"}, status=status.HTTP_400_BAD_REQUEST)
+        return Response(status=status.HTTP_205_RESET_CONTENT)

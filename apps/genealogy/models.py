@@ -55,6 +55,10 @@ class Person(models.Model):
         if self.birth_date and self.death_date and self.death_date < self.birth_date:
             raise ValidationError({"death_date": "Дата смерти не может быть раньше даты рождения."})
 
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        return super().save(*args, **kwargs)
+
     def __str__(self) -> str:
         return f"{self.first_name} {self.last_name}".strip()
 
@@ -82,6 +86,10 @@ class Relationship(models.Model):
         if self.from_person_id and self.to_person_id:
             if self.from_person.tree_id != self.tree_id or self.to_person.tree_id != self.tree_id:
                 raise ValidationError("Оба человека в связи должны принадлежать тому же дереву.")
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        return super().save(*args, **kwargs)
 
     def __str__(self) -> str:
         return f"{self.from_person} -> {self.relation_type} -> {self.to_person}"

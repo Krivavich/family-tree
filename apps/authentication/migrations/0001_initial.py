@@ -15,7 +15,7 @@ class Migration(migrations.Migration):
             name="TwoFactorCode",
             fields=[
                 ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
-                ("code", models.CharField(max_length=6)),
+                ("code_hash", models.CharField(max_length=128)),
                 ("is_used", models.BooleanField(default=False)),
                 ("expires_at", models.DateTimeField()),
                 ("created_at", models.DateTimeField(auto_now_add=True)),

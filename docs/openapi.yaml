@@ -1,26 +1,34 @@
 openapi: 3.0.3
 info:
   title: Family Tree API
-  version: 1.2.0
+  version: 1.2.1
   description: API с JWT+2FA, membership access и предложенными правками.
 servers:
   - url: /api
 paths:
   /auth/token/:
     post:
-      summary: Step1 JWT login (creates 2FA challenge)
+      summary: Step1 login (username/password), creates 2FA challenge
       responses:
         '200': { description: 2FA challenge created }
+        '401': { description: Invalid credentials }
+        '429': { description: Too many 2FA requests }
   /auth/2fa/verify/:
     post:
       summary: Verify 2FA code and issue access/refresh tokens
       responses:
         '200': { description: OK }
+        '400': { description: Invalid/expired code }
   /auth/token/refresh/:
     post:
       summary: Refresh JWT token
       responses:
         '200': { description: OK }
+  /auth/logout/:
+    post:
+      summary: Blacklist refresh token
+      responses:
+        '205': { description: Logged out }
   /persons/:
     get:
       summary: Список персон из деревьев текущего пользователя
@@ -30,6 +38,7 @@ paths:
       summary: Создать персону (owner/editor)
       responses:
         '201': { description: Created }
+        '403': { description: Forbidden }
   /relationships/:
     get:
       summary: Список связей
@@ -39,6 +48,7 @@ paths:
       summary: Создать связь (owner/editor)
       responses:
         '201': { description: Created }
+        '403': { description: Forbidden }
   /proposed-changes/:
     get:
       summary: Список предложенных правок

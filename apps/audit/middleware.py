@@ -8,6 +8,7 @@ class AuditUserMiddleware:
     def __call__(self, request):
         user = request.user if getattr(request, "user", None) and request.user.is_authenticated else None
         set_current_user(user)
-        response = self.get_response(request)
-        set_current_user(None)
-        return response
+        try:
+            return self.get_response(request)
+        finally:
+            set_current_user(None)

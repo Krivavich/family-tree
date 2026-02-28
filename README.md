@@ -1,59 +1,38 @@
-# Family Tree — Release Candidate Plus
+# Family Tree — Security-hardened Release Candidate
 
-Продолжаем после MVP: в этой итерации закрыт следующий блок задач из roadmap — **JWT + refresh + 2FA, granular-policy по ролям, очередь превью медиа, предложенные правки, GEDCOM import/export (базовый)**.
+Проведён критический security review проекта и исправлен ряд уязвимостей/рисков.
 
-## Новое в этой версии
+## Исправления безопасности и качества
 
-## 1) JWT + Refresh + 2FA
-- `POST /api/auth/token/` — первичная аутентификация и создание 2FA challenge.
-- `POST /api/auth/2fa/verify/` — подтверждение кода и выдача `access/refresh`.
-- `POST /api/auth/token/refresh/` — refresh JWT.
-- Модель `TwoFactorCode` хранит одноразовые коды и срок действия.
+1. **JWT/2FA hardening**
+- Аутентификация теперь сначала проверяет `username/password` через `authenticate`, и только потом создаёт 2FA challenge.
+- 2FA-коды больше не хранятся в plaintext: хранится HMAC-хэш (`code_hash`).
+- Проверка кода выполняется через constant-time сравнение (`hmac.compare_digest`).
+- Добавлен anti-spam лимит на выдачу нового 2FA challenge (не чаще 1 раза в 60 сек).
+- Добавлен endpoint logout с blacklist refresh token: `POST /api/auth/logout/`.
 
-> Сейчас код 2FA возвращается в ответе API (demo-mode). Для prod нужно отправлять по email/SMS/TOTP app.
+2. **Django security defaults**
+- `DEBUG=0` по умолчанию.
+- Требование `DJANGO_SECRET_KEY` в non-debug окружении.
+- `ALLOWED_HOSTS` по умолчанию ограничен localhost.
+- Добавлены `CSRF_TRUSTED_ORIGINS`, secure-cookie/HSTS/SSL env-флаги.
+- Включены password validators.
+- Подключен `rest_framework_simplejwt.token_blacklist`.
 
-## 2) Ролевая политика owner/editor/viewer
-- `IsTreeMember` ограничивает доступ только участниками дерева.
-- `HasTreeWriteRole` разрешает модификации только owner/editor, viewer — read only.
+3. **Runtime integrity improvements**
+- `AuditUserMiddleware` теперь очищает контекст в `finally`, чтобы избежать утечек контекста между запросами при исключениях.
+- В `Person` и `Relationship` вызов `full_clean()` перенесён в `save()`, чтобы валидации выполнялись не только через формы.
 
-## 3) Медиа: готовность к S3/MinIO + фоновые задачи
-- Настройки хранения через `USE_S3`, `AWS_*` env.
-- Добавлен `preview_file` для `MediaAsset`.
-- Добавлена celery-task `generate_media_preview` (MVP-stub).
+## API (актуально)
+- `POST /api/auth/token/`
+- `POST /api/auth/2fa/verify/`
+- `POST /api/auth/token/refresh/`
+- `POST /api/auth/logout/`
+- `GET/POST /api/persons/`
+- `GET/POST /api/relationships/`
+- `GET/POST /api/proposed-changes/`
 
-## 4) Предложенные правки и конфликтный workflow
-- Модель `ProposedChange` (pending/approved/rejected).
-- API endpoint `/api/proposed-changes/` для подачи предложений.
-- Базис для дальнейшей модерации владельцем дерева.
+OpenAPI: `docs/openapi.yaml`.
 
-## 5) GEDCOM import/export
-- `python manage.py export_gedcom <tree_id> --output tree.ged`
-- `python manage.py import_gedcom <tree_id> <input.ged>`
-- Экспорт полноценного шаблона GEDCOM + импорт MVP-парсером по именам.
-
----
-
-## Быстрый запуск
-```bash
-python -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-cp .env.example .env
-python manage.py migrate
-python manage.py createsuperuser
-python manage.py runserver
-```
-
-Инфраструктура для локальной разработки:
-```bash
-docker compose up -d db redis minio
-```
-
----
-
-## Что дальше (следующий шаг после этой итерации)
-1. Настоящий production 2FA (TOTP/email/SMS) + rate limits + device binding.
-2. Применение `ProposedChange` как транзакционного merge-flow.
-3. Реальная генерация preview (Pillow/ffmpeg) и антивирусный скан upload-файлов.
-4. Полноценный GEDCOM parser (семьи, браки, источники, места).
-5. Тесты: unit + integration + permission matrix.
+## Важная пометка для production
+Сейчас debug-код 2FA возвращается **только если `DEBUG=1`**. Для production нужно отправлять код через email/SMS/TOTP provider.
