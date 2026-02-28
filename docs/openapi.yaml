@@ -1,0 +1,88 @@
+openapi: 3.0.3
+info:
+  title: Family Tree API
+  version: 1.1.0
+  description: MVP API для персон и родственных связей с контролем доступа по membership.
+servers:
+  - url: /api
+paths:
+  /persons/:
+    get:
+      summary: Список персон из деревьев текущего пользователя
+      responses:
+        '200': { description: OK }
+    post:
+      summary: Создать персону
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Person'
+      responses:
+        '201': { description: Created }
+  /persons/{id}/:
+    get:
+      summary: Получить персону
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      responses:
+        '200': { description: OK }
+        '403': { description: Forbidden }
+    patch:
+      summary: Обновить персону
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      responses:
+        '200': { description: Updated }
+    delete:
+      summary: Удалить персону
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      responses:
+        '204': { description: Deleted }
+  /relationships/:
+    get:
+      summary: Список связей из деревьев текущего пользователя
+      responses:
+        '200': { description: OK }
+    post:
+      summary: Создать связь
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Relationship'
+      responses:
+        '201': { description: Created }
+components:
+  schemas:
+    Person:
+      type: object
+      required: [tree, first_name]
+      properties:
+        tree: { type: integer }
+        first_name: { type: string }
+        last_name: { type: string }
+        birth_date: { type: string, format: date }
+        death_date: { type: string, format: date }
+        biography: { type: string }
+        privacy: { type: string, enum: [public, family, private] }
+    Relationship:
+      type: object
+      required: [tree, from_person, to_person, relation_type]
+      properties:
+        tree: { type: integer }
+        from_person: { type: integer }
+        to_person: { type: integer }
+        relation_type: { type: string, enum: [parent, spouse] }

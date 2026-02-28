@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}Новая связь | Family Tree{% endblock %}
+{% block content %}
+<div class="card">
+  <h1>Новая связь</h1>
+  <form method="post">{% csrf_token %}
+    {{ form.as_p }}
+    <div class="row">
+      <button type="submit" class="btn">Сохранить</button>
+      <a href="/relationships/" class="btn btn-soft">Отмена</a>
+    </div>
+  </form>
+</div>
+{% endblock %}
