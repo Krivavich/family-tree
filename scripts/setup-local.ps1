@@ -4,13 +4,30 @@ param(
 
 $ErrorActionPreference = 'Stop'
 
+function Ensure-ProjectRoot {
+    if (Test-Path -Path "manage.py" -PathType Leaf) {
+        return
+    }
+
+    $nestedRepo = Join-Path (Get-Location) "family-tree"
+    if (Test-Path -Path (Join-Path $nestedRepo "manage.py") -PathType Leaf) {
+        Write-Warning "You are one level above the project root. Switching to .\\family-tree"
+        Set-Location $nestedRepo
+        return
+    }
+
+    throw "manage.py not found. Run this script from the Family Tree project root."
+}
+
+Ensure-ProjectRoot
+
 if (-not (Test-Path -Path ".env.example" -PathType Leaf)) {
-    Write-Warning ".env.example не найден в текущем каталоге. Пытаюсь восстановить из git..."
+    Write-Warning ".env.example not found. Trying to restore it from git..."
     git checkout HEAD -- .env.example 2>$null
 }
 
 if (-not (Test-Path -Path ".env.example" -PathType Leaf)) {
-    Write-Warning "Не удалось восстановить .env.example из git. Создаю минимальный .env."
+    Write-Warning "Failed to restore .env.example from git. Creating a minimal .env instead."
 @"
 DJANGO_SECRET_KEY=change-me
 DJANGO_DEBUG=1
@@ -53,4 +70,4 @@ if (-not (Test-Path -Path ".venv" -PathType Container)) {
 
 & .\.venv\Scripts\python -m pip install -r requirements.txt
 & .\.venv\Scripts\python manage.py migrate
-Write-Host "Готово. Запуск: .\.venv\Scripts\python manage.py runserver 127.0.0.1:8000"
+Write-Host "Done. Start app with: .\.venv\Scripts\python manage.py runserver 127.0.0.1:8000"

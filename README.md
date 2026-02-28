@@ -148,11 +148,21 @@ Copy-Item .env.example .env
 ```powershell
 cd C:\Projects\family-tree
 git status
-git pull
+```
 
-# проверить, есть ли файл в репозитории
+Если видите `No commits yet` и `Untracked files: family-tree/`, вы находитесь **на уровень выше** реального проекта.
+
+Перейдите в вложенную папку и повторите:
+
+```powershell
+cd .\family-tree
 Test-Path .env.example
+Copy-Item .env.example .env
+```
 
+Если вы уже в правильной папке, но файла нет:
+
+```powershell
 # восстановить файл из текущего коммита (если случайно удалили локально)
 git checkout HEAD -- .env.example
 
@@ -160,9 +170,9 @@ git checkout HEAD -- .env.example
 Copy-Item .env.example .env
 ```
 
-Если `Test-Path .env.example` всё ещё возвращает `False`, значит у вас не тот репозиторий/ветка. Проверьте `git remote -v` и `git branch`.
+Если `git checkout HEAD -- .env.example` падает с `invalid reference: HEAD`, это неинициализированная/пустая папка, а не ваш репозиторий — нужно перейти в папку, где есть `manage.py` и история git.
 
-Альтернатива: используйте автоматический скрипт `scripts/setup-local.ps1`, который сам пытается восстановить `.env.example` и продолжить запуск.
+Альтернатива: используйте автоматический скрипт `scripts/setup-local.ps1`, который сам проверяет, что вы в корне проекта, и при необходимости автоматически переходит в `.\family-tree`.
 
 ```powershell
 cd C:\Projects\family-tree
@@ -173,6 +183,15 @@ powershell -ExecutionPolicy Bypass -File .\scripts\setup-local.ps1
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\scripts\setup-local.ps1 -UseDocker
+```
+
+
+Если при запуске `setup-local.ps1` видите ошибку `TerminatorExpectedAtEndOfString`, обновите репозиторий до последнего коммита и запустите скрипт снова:
+
+```powershell
+cd C:\Projects\family-tree\family-tree
+git pull
+powershell -ExecutionPolicy Bypass -File .\scripts\setup-local.ps1
 ```
 
 ### 11.3 Вариант A: быстрый локальный старт на SQLite (без контейнеров)
