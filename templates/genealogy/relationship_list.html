@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Связи</h1>
+<a class="btn" href="/relationships/new/">+ Добавить связь</a>
+{% for rel in object_list %}
+  <div class="card">{{ rel.from_person }} → {{ rel.get_relation_type_display }} → {{ rel.to_person }}</div>
+{% empty %}
+  <div class="card">Связей пока нет.</div>
+{% endfor %}
+{% endblock %}
