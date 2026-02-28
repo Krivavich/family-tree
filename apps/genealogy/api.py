@@ -2,7 +2,7 @@ from rest_framework import permissions, serializers, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
-from .models import Event, Person, ProposedChange, Relationship
+from .models import Event, Person, ProposedChange, Relationship, TreeMembership
 from .permissions import HasTreeOwnerRole, HasTreeWriteRole, IsTreeMember
 from .services.proposed_changes import apply_proposed_change, reject_proposed_change
 
@@ -28,8 +28,11 @@ class EventSerializer(serializers.ModelSerializer):
     def validate_person(self, value):
         request = self.context.get("request")
         if request and request.user.is_authenticated:
-            if not Person.objects.filter(id=value.id, tree__memberships__user=request.user).exists():
+            membership = TreeMembership.objects.filter(tree=value.tree, user=request.user).first()
+            if not membership:
                 raise serializers.ValidationError("Person is not accessible for current user")
+            if request.method not in permissions.SAFE_METHODS and membership.role == TreeMembership.Role.VIEWER:
+                raise serializers.ValidationError("Viewer role cannot create or edit events")
         return value
 
 

@@ -3,8 +3,10 @@ from datetime import date
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from django.core.files.uploadedfile import SimpleUploadedFile
-from django.test import TestCase
+from django.test import RequestFactory, TestCase
 
+from .api import EventSerializer
+from .forms import EventForm, PersonForm, RelationshipForm
 from .models import Event, MediaAsset, Person, ProposedChange, Tree, TreeMembership
 from .services.insights import calculate_person_completeness
 from .services.proposed_changes import apply_proposed_change
@@ -73,3 +75,32 @@ class EventAndInsightsTests(TestCase):
     def test_completeness_score(self):
         c = calculate_person_completeness(self.person)
         self.assertLess(c.score, 100)
+
+
+class RoleWriteRestrictionTests(TestCase):
+    def setUp(self):
+        User = get_user_model()
+        self.owner = User.objects.create_user(username="owner4", password="pass-12345")
+        self.viewer = User.objects.create_user(username="viewer4", password="pass-12345")
+        self.tree = Tree.objects.create(name="Tree4", owner=self.owner)
+        TreeMembership.objects.create(tree=self.tree, user=self.owner, role=TreeMembership.Role.OWNER)
+        TreeMembership.objects.create(tree=self.tree, user=self.viewer, role=TreeMembership.Role.VIEWER)
+        self.person = Person.objects.create(tree=self.tree, first_name="Petr", last_name="V")
+
+    def test_viewer_cannot_use_write_forms(self):
+        person_form = PersonForm(user=self.viewer)
+        relationship_form = RelationshipForm(user=self.viewer)
+        event_form = EventForm(user=self.viewer)
+        self.assertEqual(person_form.fields["tree"].queryset.count(), 0)
+        self.assertEqual(relationship_form.fields["tree"].queryset.count(), 0)
+        self.assertEqual(event_form.fields["person"].queryset.count(), 0)
+
+    def test_event_serializer_blocks_viewer_write(self):
+        request = RequestFactory().post("/api/events/")
+        request.user = self.viewer
+        serializer = EventSerializer(
+            data={"person": self.person.id, "event_type": Event.Type.BIRTH},
+            context={"request": request},
+        )
+        self.assertFalse(serializer.is_valid())
+        self.assertIn("person", serializer.errors)

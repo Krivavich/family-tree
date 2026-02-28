@@ -51,3 +51,12 @@ class TwoFactorApiContractTests(TestCase):
         self.assertTrue(challenge.is_valid(raw))
         # API layer requires challenge_id; model test ensures challenge objects are addressable
         self.assertIsNotNone(challenge.id)
+
+    def test_verify_does_not_leak_unknown_user(self):
+        response = self.client.post(
+            "/api/auth/2fa/verify/",
+            {"username": "unknown-user", "code": "000000"},
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.json().get("detail"), "Invalid or expired 2FA code")

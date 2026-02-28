@@ -1,6 +1,13 @@
 from django import forms
 
-from .models import Event, Person, Relationship, Tree
+from .models import Event, Person, Relationship, Tree, TreeMembership
+
+
+def editable_trees_for_user(user):
+    return Tree.objects.filter(
+        memberships__user=user,
+        memberships__role__in=[TreeMembership.Role.OWNER, TreeMembership.Role.EDITOR],
+    ).distinct()
 
 
 class PersonForm(forms.ModelForm):
@@ -12,7 +19,7 @@ class PersonForm(forms.ModelForm):
         user = kwargs.pop("user", None)
         super().__init__(*args, **kwargs)
         if user and user.is_authenticated:
-            self.fields["tree"].queryset = Tree.objects.filter(memberships__user=user).distinct()
+            self.fields["tree"].queryset = editable_trees_for_user(user)
 
 
 class RelationshipForm(forms.ModelForm):
@@ -24,7 +31,7 @@ class RelationshipForm(forms.ModelForm):
         user = kwargs.pop("user", None)
         super().__init__(*args, **kwargs)
         if user and user.is_authenticated:
-            trees = Tree.objects.filter(memberships__user=user).distinct()
+            trees = editable_trees_for_user(user)
             self.fields["tree"].queryset = trees
             self.fields["from_person"].queryset = Person.objects.filter(tree__in=trees)
             self.fields["to_person"].queryset = Person.objects.filter(tree__in=trees)
@@ -39,4 +46,4 @@ class EventForm(forms.ModelForm):
         user = kwargs.pop("user", None)
         super().__init__(*args, **kwargs)
         if user and user.is_authenticated:
-            self.fields["person"].queryset = Person.objects.filter(tree__memberships__user=user).distinct()
+            self.fields["person"].queryset = Person.objects.filter(tree__in=editable_trees_for_user(user)).distinct()

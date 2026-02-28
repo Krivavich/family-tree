@@ -118,3 +118,51 @@ python manage.py import_gedcom <tree_id> <input.ged>
 - 2FA канал email/SMS пока интеграционный stub; в production требуется подключение реального провайдера и SLA мониторинга доставки.
 - GEDCOM импорт/экспорт пока базовый; для профессиональной генеалогии нужен расширенный парсер источников/семей/браков.
 - Media AV-проверка базовая (EICAR); нужен полноценный внешнй антивирусный контур в асинхронном pipeline.
+
+
+## 11. Как скопировать проект на локальный сервер и запустить локально
+
+### 11.1 Копирование проекта на свой локальный сервер (Linux/macOS)
+```bash
+# 1) на локальном ПК
+git clone <YOUR_REPO_URL> family-tree
+cd family-tree
+
+# 2) копирование на удалённый сервер (пример через rsync)
+rsync -avz --delete ./ user@YOUR_SERVER_IP:/opt/family-tree/
+
+# 3) подключение к серверу
+ssh user@YOUR_SERVER_IP
+cd /opt/family-tree
+```
+
+### 11.2 Запуск проекта для тестирования на локальном компьютере
+```bash
+# 1) подготовка
+python -m venv .venv
+source .venv/bin/activate  # Windows: .venv\Scripts\activate
+pip install -r requirements.txt
+cp .env.example .env
+
+# 2) миграции и админ
+python manage.py migrate
+python manage.py createsuperuser
+
+# 3) запуск
+python manage.py runserver 0.0.0.0:8000
+```
+
+Открыть в браузере: `http://127.0.0.1:8000/`
+
+### 11.3 Запуск локально через Docker (PostgreSQL + Redis + MinIO)
+```bash
+docker compose up -d db redis minio
+python manage.py migrate
+python manage.py runserver 0.0.0.0:8000
+```
+
+## 12. Что исправлено в ревизии безопасности
+- Убран сценарий user-enumeration в 2FA verify: для несуществующего пользователя теперь возвращается унифицированная ошибка.
+- Для CRUD-форм (Person/Relationship/Event) добавлено ограничение по ролям: `viewer` не получает write-наборы данных.
+- Для API событий добавлена проверка write-ролей (`owner/editor`) при create/update.
+- Добавлены дополнительные security-настройки: `SECURE_REFERRER_POLICY`, `SESSION_COOKIE_HTTPONLY`, опциональный `CSRF_COOKIE_HTTPONLY`.

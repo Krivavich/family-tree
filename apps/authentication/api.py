@@ -99,7 +99,7 @@ class TwoFactorVerifyView(APIView):
 
         user = get_user_model().objects.filter(username=serializer.validated_data["username"]).first()
         if not user:
-            return Response({"detail": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"detail": "Invalid or expired 2FA code"}, status=status.HTTP_400_BAD_REQUEST)
 
         device = TokenObtainWith2FAView._select_device(user, serializer.validated_data.get("device_id"))
         if not device:
