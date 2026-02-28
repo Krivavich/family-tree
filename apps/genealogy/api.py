@@ -1,7 +1,10 @@
-from rest_framework import permissions, serializers, viewsets
+from rest_framework import permissions, serializers, status, viewsets
+from rest_framework.decorators import action
+from rest_framework.response import Response
 
 from .models import Person, ProposedChange, Relationship
-from .permissions import HasTreeWriteRole, IsTreeMember
+from .permissions import HasTreeOwnerRole, HasTreeWriteRole, IsTreeMember
+from .services.proposed_changes import apply_proposed_change, reject_proposed_change
 
 
 class PersonSerializer(serializers.ModelSerializer):
@@ -31,7 +34,7 @@ class ProposedChangeSerializer(serializers.ModelSerializer):
             "reviewed_at",
             "created_at",
         ]
-        read_only_fields = ["proposer", "reviewer", "reviewed_at", "created_at"]
+        read_only_fields = ["proposer", "reviewer", "reviewed_at", "created_at", "status"]
 
 
 class PersonViewSet(viewsets.ModelViewSet):
@@ -63,3 +66,15 @@ class ProposedChangeViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(proposer=self.request.user)
+
+    @action(detail=True, methods=["post"], permission_classes=[permissions.IsAuthenticated, HasTreeOwnerRole])
+    def approve(self, request, pk=None):
+        instance = self.get_object()
+        updated = apply_proposed_change(instance, reviewer=request.user)
+        return Response(ProposedChangeSerializer(updated).data, status=status.HTTP_200_OK)
+
+    @action(detail=True, methods=["post"], permission_classes=[permissions.IsAuthenticated, HasTreeOwnerRole])
+    def reject(self, request, pk=None):
+        instance = self.get_object()
+        updated = reject_proposed_change(instance, reviewer=request.user)
+        return Response(ProposedChangeSerializer(updated).data, status=status.HTTP_200_OK)

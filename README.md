@@ -1,38 +1,54 @@
-# Family Tree — Security-hardened Release Candidate
+# Family Tree — Next Iteration (Security + Reliability)
 
-Проведён критический security review проекта и исправлен ряд уязвимостей/рисков.
+В этой итерации проект продвинут по следующим направлениям: production-ready 2FA, device binding, транзакционный merge-flow предложенных правок, усиленная защита медиа-загрузок, улучшенный GEDCOM импорт и базовые тесты.
 
-## Исправления безопасности и качества
+## Что сделано
 
-1. **JWT/2FA hardening**
-- Аутентификация теперь сначала проверяет `username/password` через `authenticate`, и только потом создаёт 2FA challenge.
-- 2FA-коды больше не хранятся в plaintext: хранится HMAC-хэш (`code_hash`).
-- Проверка кода выполняется через constant-time сравнение (`hmac.compare_digest`).
-- Добавлен anti-spam лимит на выдачу нового 2FA challenge (не чаще 1 раза в 60 сек).
-- Добавлен endpoint logout с blacklist refresh token: `POST /api/auth/logout/`.
+### 1) Production-oriented 2FA
+- Поддержаны устройства 2FA: `email`, `sms`, `totp` (`TwoFactorDevice`).
+- Поддержаны доверенные устройства (`TrustedDevice`) с токеном на 30 дней.
+- Логин может пропускать 2FA только при валидном `trusted_device_token`.
+- Для TOTP добавлена верификация RFC6238-like (без внешней зависимости).
+- Для email/sms оставлен интеграционный hook `send_2fa_code`.
+- Анти-спам выдачи challenge сохранён (60 секунд).
 
-2. **Django security defaults**
-- `DEBUG=0` по умолчанию.
-- Требование `DJANGO_SECRET_KEY` в non-debug окружении.
-- `ALLOWED_HOSTS` по умолчанию ограничен localhost.
-- Добавлены `CSRF_TRUSTED_ORIGINS`, secure-cookie/HSTS/SSL env-флаги.
-- Включены password validators.
-- Подключен `rest_framework_simplejwt.token_blacklist`.
+### 2) ProposedChange merge-flow
+- Добавлен transactional apply/reject сервис.
+- API actions:
+  - `POST /api/proposed-changes/{id}/approve/`
+  - `POST /api/proposed-changes/{id}/reject/`
+- Одобрение правки owner-ом дерева применяет изменения к целевой сущности в транзакции.
 
-3. **Runtime integrity improvements**
-- `AuditUserMiddleware` теперь очищает контекст в `finally`, чтобы избежать утечек контекста между запросами при исключениях.
-- В `Person` и `Relationship` вызов `full_clean()` перенесён в `save()`, чтобы валидации выполнялись не только через формы.
+### 3) Media security + preview
+- Добавлена server-side валидация загрузок:
+  - лимит размера,
+  - сигнатура EICAR (базовый AV guard).
+- `MediaAsset` валидируется на `save()`.
+- `generate_media_preview` теперь пытается генерировать JPG preview через Pillow (fallback-safe).
 
-## API (актуально)
-- `POST /api/auth/token/`
-- `POST /api/auth/2fa/verify/`
-- `POST /api/auth/token/refresh/`
-- `POST /api/auth/logout/`
-- `GET/POST /api/persons/`
-- `GET/POST /api/relationships/`
-- `GET/POST /api/proposed-changes/`
+### 4) GEDCOM parser улучшен
+- Импорт now parses `INDI`, `NAME`, `BIRT/DEAT DATE`, `FAM`, `HUSB/CHIL`.
+- Создаются `Person` и parent-child `Relationship` при импорте.
 
-OpenAPI: `docs/openapi.yaml`.
+### 5) Тестирование
+- Добавлены unit/integration tests для:
+  - 2FA hashing/TOTP/trusted-device механики,
+  - permission matrix,
+  - merge-flow предложенных правок,
+  - media validation.
 
-## Важная пометка для production
-Сейчас debug-код 2FA возвращается **только если `DEBUG=1`**. Для production нужно отправлять код через email/SMS/TOTP provider.
+## Запуск
+```bash
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+cp .env.example .env
+python manage.py migrate
+python manage.py createsuperuser
+python manage.py runserver
+```
+
+## Инфраструктура dev
+```bash
+docker compose up -d db redis minio
+```

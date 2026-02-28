@@ -2,6 +2,8 @@ from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models
 
+from .services.media_security import validate_media_upload
+
 
 class Tree(models.Model):
     name = models.CharField(max_length=255)
@@ -105,6 +107,14 @@ class MediaAsset(models.Model):
 
     class Meta:
         ordering = ["-uploaded_at"]
+
+    def clean(self):
+        if self.file:
+            validate_media_upload(self.file)
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        return super().save(*args, **kwargs)
 
 
 class Fact(models.Model):

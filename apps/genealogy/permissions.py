@@ -49,3 +49,8 @@ class HasTreeWriteRole(permissions.BasePermission):
             user=request.user,
             role__in=[TreeMembership.Role.OWNER, TreeMembership.Role.EDITOR],
         ).exists()
+
+
+class HasTreeOwnerRole(permissions.BasePermission):
+    def has_object_permission(self, request, view, obj):
+        return TreeMembership.objects.filter(tree=obj.tree, user=request.user, role=TreeMembership.Role.OWNER).exists()

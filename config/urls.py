@@ -16,5 +16,5 @@ urlpatterns = [
     path("", include("apps.genealogy.urls")),
     path("api/auth/", include("apps.authentication.urls")),
     path("api/", include(router.urls)),
-    path("api/schema/", get_schema_view(title="Family Tree API", version="1.2.1"), name="openapi-schema"),
+    path("api/schema/", get_schema_view(title="Family Tree API", version="1.3.0"), name="openapi-schema"),
 ]

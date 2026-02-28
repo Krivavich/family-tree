@@ -6,3 +6,4 @@ PyYAML>=6.0
 celery>=5.4
 redis>=5.0
 django-storages[boto3]>=1.14
+Pillow>=10.0
