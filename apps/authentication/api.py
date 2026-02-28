@@ -1,9 +1,6 @@
-from datetime import timedelta
-
 from django.conf import settings
 from django.contrib.auth import authenticate, get_user_model
 from django.core.cache import cache
-from django.utils import timezone
 from rest_framework import permissions, serializers, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -38,8 +35,10 @@ class TokenObtainWith2FAView(APIView):
         if not user:
             return Response({"detail": "Invalid credentials"}, status=status.HTTP_401_UNAUTHORIZED)
 
+        user_agent = request.META.get("HTTP_USER_AGENT", "")
+        ip_address = request.META.get("REMOTE_ADDR", "")
         trusted_token = serializer.validated_data.get("trusted_device_token")
-        if TrustedDevice.validate(user=user, raw_token=trusted_token):
+        if TrustedDevice.validate(user=user, raw_token=trusted_token, user_agent=user_agent, ip_address=ip_address):
             refresh = RefreshToken.for_user(user)
             return Response({"access": str(refresh.access_token), "refresh": str(refresh), "used_trusted_device": True})
 

@@ -36,6 +36,19 @@ class ProposedChangeSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ["proposer", "reviewer", "reviewed_at", "created_at", "status"]
 
+    def validate(self, attrs):
+        tree = attrs["tree"]
+        target_model = attrs["target_model"]
+        target_id = attrs["target_id"]
+
+        if target_model == "person":
+            if not Person.objects.filter(id=target_id, tree=tree).exists():
+                raise serializers.ValidationError("Target person not found in selected tree")
+        else:
+            raise serializers.ValidationError("Unsupported target_model")
+
+        return attrs
+
 
 class PersonViewSet(viewsets.ModelViewSet):
     serializer_class = PersonSerializer
@@ -67,13 +80,21 @@ class ProposedChangeViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(proposer=self.request.user)
 
-    @action(detail=True, methods=["post"], permission_classes=[permissions.IsAuthenticated, HasTreeOwnerRole])
+    @action(
+        detail=True,
+        methods=["post"],
+        permission_classes=[permissions.IsAuthenticated, IsTreeMember, HasTreeOwnerRole],
+    )
     def approve(self, request, pk=None):
         instance = self.get_object()
         updated = apply_proposed_change(instance, reviewer=request.user)
         return Response(ProposedChangeSerializer(updated).data, status=status.HTTP_200_OK)
 
-    @action(detail=True, methods=["post"], permission_classes=[permissions.IsAuthenticated, HasTreeOwnerRole])
+    @action(
+        detail=True,
+        methods=["post"],
+        permission_classes=[permissions.IsAuthenticated, IsTreeMember, HasTreeOwnerRole],
+    )
     def reject(self, request, pk=None):
         instance = self.get_object()
         updated = reject_proposed_change(instance, reviewer=request.user)

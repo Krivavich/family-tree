@@ -23,7 +23,8 @@ class TwoFactorModelTests(TestCase):
 
     def test_trusted_device_token_validation(self):
         _record, raw = TrustedDevice.issue_for_user(self.user, user_agent="ua", ip_address="127.0.0.1")
-        self.assertTrue(TrustedDevice.validate(self.user, raw))
+        self.assertTrue(TrustedDevice.validate(self.user, raw, user_agent="ua", ip_address="127.0.0.1"))
+        self.assertFalse(TrustedDevice.validate(self.user, raw, user_agent="other", ip_address="127.0.0.1"))
         self.assertFalse(TrustedDevice.validate(self.user, "bad"))
 
 

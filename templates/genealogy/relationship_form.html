@@ -1,8 +1,9 @@
 {% extends "base.html" %}
 {% block title %}Новая связь | Family Tree{% endblock %}
 {% block content %}
-<div class="card">
+<div class="card glass">
   <h1>Новая связь</h1>
+  <p class="muted">Свяжите родственников типом отношения.</p>
   <form method="post">{% csrf_token %}
     {{ form.as_p }}
     <div class="row">

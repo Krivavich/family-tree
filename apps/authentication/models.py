@@ -91,9 +91,18 @@ class TrustedDevice(models.Model):
         return record, raw_token
 
     @classmethod
-    def validate(cls, user, raw_token: str) -> bool:
+    def validate(cls, user, raw_token: str, user_agent: str = "", ip_address: str = "") -> bool:
         if not raw_token:
             return False
         token_hash = cls._hash_token(raw_token)
         device = cls.objects.filter(user=user, token_hash=token_hash).first()
-        return bool(device and device.expires_at > timezone.now())
+        if not device or device.expires_at <= timezone.now():
+            return False
+
+        if device.user_agent and user_agent and not hmac.compare_digest(device.user_agent, user_agent[:255]):
+            return False
+        if device.ip_address and ip_address and not hmac.compare_digest(device.ip_address, ip_address[:64]):
+            return False
+
+        device.save(update_fields=["last_used_at"])
+        return True
