@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}Люди | Family Tree{% endblock %}
+{% block content %}
+<h1>Люди в деревьях</h1>
+{% for person in object_list %}
+  <div class="card">
+    <div class="row" style="justify-content:space-between;">
+      <div>
+        <strong>{{ person }}</strong>
+        <div class="muted">Приватность: {{ person.get_privacy_display }} · Дерево #{{ person.tree_id }}</div>
+      </div>
+      <div class="row">
+        <a href="/persons/{{ person.id }}/edit/" class="btn btn-soft">Редактировать</a>
+        <a href="/persons/{{ person.id }}/delete/" class="btn btn-danger">Удалить</a>
+      </div>
+    </div>
+  </div>
+{% empty %}
+  <div class="card">Пока нет людей. Добавьте первого участника семьи.</div>
+{% endfor %}
+{% endblock %}
