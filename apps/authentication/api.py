@@ -3,6 +3,7 @@ from django.contrib.auth import authenticate, get_user_model
 from django.core.cache import cache
 from rest_framework import permissions, serializers, status
 from rest_framework.response import Response
+from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.views import APIView
 from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -22,6 +23,8 @@ class TokenObtainWith2FASerializer(serializers.Serializer):
 
 class TokenObtainWith2FAView(APIView):
     permission_classes = [permissions.AllowAny]
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = "auth_login"
 
     def post(self, request):
         serializer = TokenObtainWith2FASerializer(data=request.data)
@@ -81,11 +84,14 @@ class TwoFactorVerifySerializer(serializers.Serializer):
     username = serializers.CharField()
     code = serializers.CharField(max_length=12)
     device_id = serializers.IntegerField(required=False)
+    challenge_id = serializers.IntegerField(required=False)
     trust_this_device = serializers.BooleanField(required=False, default=False)
 
 
 class TwoFactorVerifyView(APIView):
     permission_classes = [permissions.AllowAny]
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = "auth_2fa_verify"
 
     def post(self, request):
         serializer = TwoFactorVerifySerializer(data=request.data)
@@ -103,7 +109,15 @@ class TwoFactorVerifyView(APIView):
             if not device.totp_secret or not verify_totp(device.totp_secret, serializer.validated_data["code"]):
                 return Response({"detail": "Invalid or expired 2FA code"}, status=status.HTTP_400_BAD_REQUEST)
         else:
-            code = TwoFactorCode.objects.filter(user=user, device=device, is_used=False).order_by("-created_at").first()
+            challenge_id = serializer.validated_data.get("challenge_id")
+            if not challenge_id:
+                return Response({"detail": "challenge_id is required for non-TOTP verification"}, status=status.HTTP_400_BAD_REQUEST)
+            code = TwoFactorCode.objects.filter(
+                id=challenge_id,
+                user=user,
+                device=device,
+                is_used=False,
+            ).first()
             if not code or not code.is_valid(serializer.validated_data["code"]):
                 return Response({"detail": "Invalid or expired 2FA code"}, status=status.HTTP_400_BAD_REQUEST)
             code.is_used = True

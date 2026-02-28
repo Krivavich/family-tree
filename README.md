@@ -98,3 +98,4 @@ python manage.py import_gedcom <tree_id> <input.ged>
 - `docs/DEPLOY_HOSTING_RU.md` — пошаговый деплой на shared hosting.
 - `docs/DEPLOY_VPS_RU.md` — пошаговый production деплой на VPS.
 - `docs/INFRA_REQUIREMENTS_RU.md` — требования к инфраструктуре.
+- `docs/PROJECT_REVIEW_RU.md` — критическая ревизия проекта и список спорных решений.

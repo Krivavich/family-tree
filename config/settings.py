@@ -138,6 +138,8 @@ REST_FRAMEWORK = {
     "DEFAULT_THROTTLE_RATES": {
         "anon": "30/min",
         "user": "120/min",
+        "auth_login": "10/min",
+        "auth_2fa_verify": "15/min",
     },
 }
 

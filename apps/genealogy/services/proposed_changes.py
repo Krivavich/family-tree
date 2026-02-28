@@ -33,8 +33,12 @@ def reject_proposed_change(change: ProposedChange, reviewer) -> ProposedChange:
     if change.status != ProposedChange.Status.PENDING:
         return change
 
-    change.status = ProposedChange.Status.REJECTED
-    change.reviewer = reviewer
-    change.reviewed_at = timezone.now()
-    change.save(update_fields=["status", "reviewer", "reviewed_at"])
-    return change
+    with transaction.atomic():
+        locked = ProposedChange.objects.select_for_update().get(id=change.id)
+        if locked.status != ProposedChange.Status.PENDING:
+            return locked
+        locked.status = ProposedChange.Status.REJECTED
+        locked.reviewer = reviewer
+        locked.reviewed_at = timezone.now()
+        locked.save(update_fields=["status", "reviewer", "reviewed_at"])
+        return locked

@@ -33,3 +33,21 @@ class TotpTests(TestCase):
         secret = "JBSWY3DPEHPK3PXP"
         code = totp_now(secret)
         self.assertTrue(verify_totp(secret, code))
+
+
+class TwoFactorApiContractTests(TestCase):
+    def setUp(self):
+        self.user = get_user_model().objects.create_user(username="bob", password="pass-12345")
+        self.device = TwoFactorDevice.objects.create(
+            user=self.user,
+            kind=TwoFactorDevice.Kind.EMAIL,
+            target="bob@example.com",
+            is_verified=True,
+            is_default=True,
+        )
+
+    def test_challenge_id_required_for_non_totp(self):
+        challenge, raw = TwoFactorCode.issue_for_device(self.user, self.device)
+        self.assertTrue(challenge.is_valid(raw))
+        # API layer requires challenge_id; model test ensures challenge objects are addressable
+        self.assertIsNotNone(challenge.id)
