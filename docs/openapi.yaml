@@ -1,68 +1,51 @@
 openapi: 3.0.3
 info:
   title: Family Tree API
-  version: 1.1.0
-  description: MVP API для персон и родственных связей с контролем доступа по membership.
+  version: 1.2.0
+  description: API с JWT+2FA, membership access и предложенными правками.
 servers:
   - url: /api
 paths:
+  /auth/token/:
+    post:
+      summary: Step1 JWT login (creates 2FA challenge)
+      responses:
+        '200': { description: 2FA challenge created }
+  /auth/2fa/verify/:
+    post:
+      summary: Verify 2FA code and issue access/refresh tokens
+      responses:
+        '200': { description: OK }
+  /auth/token/refresh/:
+    post:
+      summary: Refresh JWT token
+      responses:
+        '200': { description: OK }
   /persons/:
     get:
       summary: Список персон из деревьев текущего пользователя
       responses:
         '200': { description: OK }
     post:
-      summary: Создать персону
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/Person'
+      summary: Создать персону (owner/editor)
       responses:
         '201': { description: Created }
-  /persons/{id}/:
-    get:
-      summary: Получить персону
-      parameters:
-        - in: path
-          name: id
-          required: true
-          schema: { type: integer }
-      responses:
-        '200': { description: OK }
-        '403': { description: Forbidden }
-    patch:
-      summary: Обновить персону
-      parameters:
-        - in: path
-          name: id
-          required: true
-          schema: { type: integer }
-      responses:
-        '200': { description: Updated }
-    delete:
-      summary: Удалить персону
-      parameters:
-        - in: path
-          name: id
-          required: true
-          schema: { type: integer }
-      responses:
-        '204': { description: Deleted }
   /relationships/:
     get:
-      summary: Список связей из деревьев текущего пользователя
+      summary: Список связей
       responses:
         '200': { description: OK }
     post:
-      summary: Создать связь
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/Relationship'
+      summary: Создать связь (owner/editor)
+      responses:
+        '201': { description: Created }
+  /proposed-changes/:
+    get:
+      summary: Список предложенных правок
+      responses:
+        '200': { description: OK }
+    post:
+      summary: Предложить правку
       responses:
         '201': { description: Created }
 components:
@@ -74,9 +57,6 @@ components:
         tree: { type: integer }
         first_name: { type: string }
         last_name: { type: string }
-        birth_date: { type: string, format: date }
-        death_date: { type: string, format: date }
-        biography: { type: string }
         privacy: { type: string, enum: [public, family, private] }
     Relationship:
       type: object
@@ -86,3 +66,11 @@ components:
         from_person: { type: integer }
         to_person: { type: integer }
         relation_type: { type: string, enum: [parent, spouse] }
+    ProposedChange:
+      type: object
+      required: [tree, target_model, target_id, change_payload]
+      properties:
+        tree: { type: integer }
+        target_model: { type: string }
+        target_id: { type: integer }
+        change_payload: { type: object }

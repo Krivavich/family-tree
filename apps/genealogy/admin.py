@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Fact, FactVersion, MediaAsset, Person, Relationship, Tree, TreeMembership
+from .models import Fact, FactVersion, MediaAsset, Person, ProposedChange, Relationship, Tree, TreeMembership
 
 
 @admin.register(Tree)
@@ -42,3 +42,9 @@ class FactAdmin(admin.ModelAdmin):
 @admin.register(FactVersion)
 class FactVersionAdmin(admin.ModelAdmin):
     list_display = ("id", "fact", "key", "confidence", "created_at")
+
+
+@admin.register(ProposedChange)
+class ProposedChangeAdmin(admin.ModelAdmin):
+    list_display = ("id", "tree", "target_model", "target_id", "status", "proposer", "reviewer")
+    list_filter = ("status", "target_model")

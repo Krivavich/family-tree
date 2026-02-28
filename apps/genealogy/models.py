@@ -91,6 +91,7 @@ class MediaAsset(models.Model):
     person = models.ForeignKey(Person, on_delete=models.CASCADE, related_name="media_assets")
     title = models.CharField(max_length=255)
     file = models.FileField(upload_to="media_assets/")
+    preview_file = models.FileField(upload_to="media_previews/", blank=True)
     uploaded_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
     uploaded_at = models.DateTimeField(auto_now_add=True)
 
@@ -119,6 +120,32 @@ class FactVersion(models.Model):
     key = models.CharField(max_length=120)
     value = models.TextField()
     confidence = models.CharField(max_length=1)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+
+class ProposedChange(models.Model):
+    class Status(models.TextChoices):
+        PENDING = "pending", "Pending"
+        APPROVED = "approved", "Approved"
+        REJECTED = "rejected", "Rejected"
+
+    tree = models.ForeignKey(Tree, on_delete=models.CASCADE, related_name="proposed_changes")
+    proposer = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="proposed_changes")
+    target_model = models.CharField(max_length=64)
+    target_id = models.PositiveIntegerField()
+    change_payload = models.JSONField(default=dict)
+    status = models.CharField(max_length=16, choices=Status.choices, default=Status.PENDING)
+    reviewer = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="reviewed_proposed_changes",
+    )
+    reviewed_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
