@@ -4,6 +4,23 @@ param(
 
 $ErrorActionPreference = 'Stop'
 
+function Ensure-ProjectRoot {
+    if (Test-Path -Path "manage.py" -PathType Leaf) {
+        return
+    }
+
+    $nestedRepo = Join-Path (Get-Location) "family-tree"
+    if (Test-Path -Path (Join-Path $nestedRepo "manage.py") -PathType Leaf) {
+        Write-Warning "Похоже, вы запустили скрипт на уровень выше проекта. Перехожу в .\\family-tree"
+        Set-Location $nestedRepo
+        return
+    }
+
+    throw "Не найден manage.py. Запустите скрипт из корня проекта Family Tree."
+}
+
+Ensure-ProjectRoot
+
 if (-not (Test-Path -Path ".env.example" -PathType Leaf)) {
     Write-Warning ".env.example не найден в текущем каталоге. Пытаюсь восстановить из git..."
     git checkout HEAD -- .env.example 2>$null
