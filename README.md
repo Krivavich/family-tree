@@ -166,3 +166,7 @@ python manage.py runserver 0.0.0.0:8000
 - Для CRUD-форм (Person/Relationship/Event) добавлено ограничение по ролям: `viewer` не получает write-наборы данных.
 - Для API событий добавлена проверка write-ролей (`owner/editor`) при create/update.
 - Добавлены дополнительные security-настройки: `SECURE_REFERRER_POLICY`, `SESSION_COOKIE_HTTPONLY`, опциональный `CSRF_COOKIE_HTTPONLY`.
+
+
+## 13. Автор и copyright
+© Krivavich — GitHub: https://github.com/Krivavich
