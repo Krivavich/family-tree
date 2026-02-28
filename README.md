@@ -120,45 +120,69 @@ python manage.py import_gedcom <tree_id> <input.ged>
 - Media AV-проверка базовая (EICAR); нужен полноценный внешнй антивирусный контур в асинхронном pipeline.
 
 
-## 11. Как скопировать проект на локальный сервер и запустить локально
+## 11. Как запустить из локального репозитория (Windows + Docker)
 
-### 11.1 Копирование проекта на свой локальный сервер (Linux/macOS)
-```bash
-# 1) на локальном ПК
-git clone <YOUR_REPO_URL> family-tree
-cd family-tree
+Локальная папка из вашего примера: `C:\Projects\family-tree`.
 
-# 2) копирование на удалённый сервер (пример через rsync)
-rsync -avz --delete ./ user@YOUR_SERVER_IP:/opt/family-tree/
-
-# 3) подключение к серверу
-ssh user@YOUR_SERVER_IP
-cd /opt/family-tree
+### 11.1 Проверка Docker и переход в репозиторий (PowerShell)
+```powershell
+cd C:\Projects\family-tree
+docker --version
+docker compose version
 ```
 
-### 11.2 Запуск проекта для тестирования на локальном компьютере
-```bash
-# 1) подготовка
-python -m venv .venv
-source .venv/bin/activate  # Windows: .venv\Scripts\activate
-pip install -r requirements.txt
-cp .env.example .env
+### 11.2 Создание `.env` (обязательно)
+```powershell
+Copy-Item .env.example .env
+```
 
-# 2) миграции и админ
+> Начиная с этой ревизии, `config/settings.py` автоматически подхватывает `.env` через `config/env.py`.
+
+### 11.3 Вариант A: быстрый локальный старт на SQLite (без контейнеров)
+```powershell
+cd C:\Projects\family-tree
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+pip install -r requirements.txt
 python manage.py migrate
 python manage.py createsuperuser
-
-# 3) запуск
-python manage.py runserver 0.0.0.0:8000
+python manage.py runserver 127.0.0.1:8000
 ```
 
-Открыть в браузере: `http://127.0.0.1:8000/`
+### 11.4 Вариант B: локальный старт с Docker-инфрой (PostgreSQL + Redis + MinIO)
+```powershell
+cd C:\Projects\family-tree
+Copy-Item .env.example .env
 
-### 11.3 Запуск локально через Docker (PostgreSQL + Redis + MinIO)
-```bash
+# переключаемся на PostgreSQL
+(Get-Content .env) -replace '^USE_SQLITE=1$', 'USE_SQLITE=0' |
+  Set-Content .env
+(Get-Content .env) -replace '^POSTGRES_HOST=localhost$', 'POSTGRES_HOST=127.0.0.1' |
+  Set-Content .env
+
+# запускаем инфраструктуру
 docker compose up -d db redis minio
+
+# запускаем Django локально
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+pip install -r requirements.txt
 python manage.py migrate
-python manage.py runserver 0.0.0.0:8000
+python manage.py createsuperuser
+python manage.py runserver 127.0.0.1:8000
+```
+
+Открыть в браузере:
+- Приложение: `http://127.0.0.1:8000/`
+- MinIO Console: `http://127.0.0.1:9001/` (логин/пароль `minio` / `minio123`)
+
+### 11.5 Копирование проекта на удалённый Linux-сервер (если нужно)
+```bash
+git clone <YOUR_REPO_URL> family-tree
+cd family-tree
+rsync -avz --delete ./ user@YOUR_SERVER_IP:/opt/family-tree/
+ssh user@YOUR_SERVER_IP
+cd /opt/family-tree
 ```
 
 ## 12. Что исправлено в ревизии безопасности

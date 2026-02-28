@@ -2,7 +2,10 @@ from datetime import timedelta
 from pathlib import Path
 import os
 
+from config.env import load_env_file
+
 BASE_DIR = Path(__file__).resolve().parent.parent
+load_env_file(BASE_DIR)
 
 DEBUG = os.getenv("DJANGO_DEBUG", "0") == "1"
 SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "")
