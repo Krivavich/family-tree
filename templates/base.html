@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Family Tree</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 2rem; background:#f7f9fc; color:#1e293b; }
+    .nav a { margin-right: 1rem; }
+    .card { background:white; border-radius:12px; padding:1rem; margin-bottom:1rem; box-shadow:0 2px 8px rgba(0,0,0,.08); }
+    .btn { background:#2563eb; color:white; padding:.45rem .8rem; border-radius:8px; text-decoration:none; }
+    .btn-danger { background:#dc2626; }
+  </style>
+</head>
+<body>
+  <div class="nav card">
+    <a href="/">Люди</a>
+    <a href="/relationships/">Связи</a>
+    <a href="/persons/new/" class="btn">+ Человек</a>
+  </div>
+  {% block content %}{% endblock %}
+</body>
+</html>
