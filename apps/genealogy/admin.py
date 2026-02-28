@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Fact, FactVersion, MediaAsset, Person, ProposedChange, Relationship, Tree, TreeMembership
+from .models import Event, Fact, FactVersion, MediaAsset, Person, ProposedChange, Relationship, Tree, TreeMembership
 
 
 @admin.register(Tree)
@@ -26,6 +26,13 @@ class PersonAdmin(admin.ModelAdmin):
 class RelationshipAdmin(admin.ModelAdmin):
     list_display = ("id", "tree", "from_person", "relation_type", "to_person")
     list_filter = ("relation_type",)
+
+
+@admin.register(Event)
+class EventAdmin(admin.ModelAdmin):
+    list_display = ("id", "person", "event_type", "event_date", "place")
+    list_filter = ("event_type",)
+    search_fields = ("person__first_name", "person__last_name", "place", "source_reference")
 
 
 @admin.register(MediaAsset)

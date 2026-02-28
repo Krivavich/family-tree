@@ -3,21 +3,28 @@
 {% block content %}
 <div class="card glass">
   <h1>Люди в деревьях</h1>
-  <p class="muted">Живой каталог участников дерева с быстрым доступом к редактированию.</p>
+  <p class="muted">Карточки с индикатором полноты данных — помогает генеалогу быстро видеть «пустые места».</p>
 </div>
-{% for person in object_list %}
+{% for item in person_cards %}
   <div class="card glass">
-    <div class="row" style="justify-content:space-between;">
+    <div class="row" style="justify-content:space-between;align-items:flex-start;">
       <div>
-        <strong>{{ person }}</strong>
-        <div class="muted">Дерево #{{ person.tree_id }}</div>
-        <span class="badge">{{ person.get_privacy_display }}</span>
+        <strong>{{ item.person }}</strong>
+        <div class="muted">Дерево #{{ item.person.tree_id }}</div>
+        <span class="badge">{{ item.person.get_privacy_display }}</span>
+      </div>
+      <div style="min-width:240px;">
+        <div class="muted" style="font-size:.9rem;">Полнота профиля: {{ item.completeness.score }}%</div>
+        <div class="progress"><span style="width: {{ item.completeness.score }}%"></span></div>
       </div>
       <div class="row">
-        <a href="/persons/{{ person.id }}/edit/" class="btn btn-soft">Редактировать</a>
-        <a href="/persons/{{ person.id }}/delete/" class="btn btn-danger">Удалить</a>
+        <a href="/persons/{{ item.person.id }}/edit/" class="btn btn-soft">Редактировать</a>
+        <a href="/persons/{{ item.person.id }}/delete/" class="btn btn-danger">Удалить</a>
       </div>
     </div>
+    {% if item.completeness.missing %}
+    <div class="muted" style="margin-top:8px;">Не хватает: {{ item.completeness.missing|join:", " }}</div>
+    {% endif %}
   </div>
 {% empty %}
   <div class="card glass">Пока нет людей. Добавьте первого участника семьи.</div>

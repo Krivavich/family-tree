@@ -168,3 +168,27 @@ class ProposedChange(models.Model):
 
     class Meta:
         ordering = ["-created_at"]
+
+
+class Event(models.Model):
+    class Type(models.TextChoices):
+        BIRTH = "birth", "Birth"
+        MARRIAGE = "marriage", "Marriage"
+        DEATH = "death", "Death"
+        MOVE = "move", "Move"
+        EDUCATION = "education", "Education"
+        WORK = "work", "Work"
+
+    person = models.ForeignKey(Person, on_delete=models.CASCADE, related_name="events")
+    event_type = models.CharField(max_length=20, choices=Type.choices)
+    event_date = models.DateField(null=True, blank=True)
+    place = models.CharField(max_length=255, blank=True)
+    description = models.TextField(blank=True)
+    source_reference = models.CharField(max_length=255, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["event_date", "id"]
+
+    def __str__(self) -> str:
+        return f"{self.person} {self.event_type} {self.event_date or ''}".strip()

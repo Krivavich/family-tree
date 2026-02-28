@@ -2,7 +2,7 @@ from rest_framework import permissions, serializers, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
-from .models import Person, ProposedChange, Relationship
+from .models import Event, Person, ProposedChange, Relationship
 from .permissions import HasTreeOwnerRole, HasTreeWriteRole, IsTreeMember
 from .services.proposed_changes import apply_proposed_change, reject_proposed_change
 
@@ -17,6 +17,20 @@ class RelationshipSerializer(serializers.ModelSerializer):
     class Meta:
         model = Relationship
         fields = ["id", "tree", "from_person", "to_person", "relation_type"]
+
+
+class EventSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Event
+        fields = ["id", "person", "event_type", "event_date", "place", "description", "source_reference", "created_at"]
+        read_only_fields = ["created_at"]
+
+    def validate_person(self, value):
+        request = self.context.get("request")
+        if request and request.user.is_authenticated:
+            if not Person.objects.filter(id=value.id, tree__memberships__user=request.user).exists():
+                raise serializers.ValidationError("Person is not accessible for current user")
+        return value
 
 
 class ProposedChangeSerializer(serializers.ModelSerializer):
@@ -66,6 +80,14 @@ class RelationshipViewSet(viewsets.ModelViewSet):
         return Relationship.objects.select_related("tree", "from_person", "to_person").filter(
             tree__memberships__user=self.request.user
         ).distinct()
+
+
+class EventViewSet(viewsets.ModelViewSet):
+    serializer_class = EventSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        return Event.objects.select_related("person").filter(person__tree__memberships__user=self.request.user).distinct()
 
 
 class ProposedChangeViewSet(viewsets.ModelViewSet):

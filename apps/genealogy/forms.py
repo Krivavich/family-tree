@@ -1,6 +1,6 @@
 from django import forms
 
-from .models import Person, Relationship, Tree
+from .models import Event, Person, Relationship, Tree
 
 
 class PersonForm(forms.ModelForm):
@@ -28,3 +28,15 @@ class RelationshipForm(forms.ModelForm):
             self.fields["tree"].queryset = trees
             self.fields["from_person"].queryset = Person.objects.filter(tree__in=trees)
             self.fields["to_person"].queryset = Person.objects.filter(tree__in=trees)
+
+
+class EventForm(forms.ModelForm):
+    class Meta:
+        model = Event
+        fields = ["person", "event_type", "event_date", "place", "description", "source_reference"]
+
+    def __init__(self, *args, **kwargs):
+        user = kwargs.pop("user", None)
+        super().__init__(*args, **kwargs)
+        if user and user.is_authenticated:
+            self.fields["person"].queryset = Person.objects.filter(tree__memberships__user=user).distinct()

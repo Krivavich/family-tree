@@ -1,9 +1,12 @@
+from datetime import date
+
 from django.contrib.auth import get_user_model
-from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.exceptions import ValidationError
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
 
-from .models import MediaAsset, Person, ProposedChange, Relationship, Tree, TreeMembership
+from .models import Event, MediaAsset, Person, ProposedChange, Tree, TreeMembership
+from .services.insights import calculate_person_completeness
 from .services.proposed_changes import apply_proposed_change
 
 
@@ -48,3 +51,25 @@ class MediaValidationTests(TestCase):
         media = MediaAsset(person=self.person, title="bad", file=upload, uploaded_by=self.owner)
         with self.assertRaises(ValidationError):
             media.full_clean()
+
+
+class EventAndInsightsTests(TestCase):
+    def setUp(self):
+        User = get_user_model()
+        self.owner = User.objects.create_user(username="owner3", password="pass-12345")
+        self.tree = Tree.objects.create(name="Tree3", owner=self.owner)
+        TreeMembership.objects.create(tree=self.tree, user=self.owner, role=TreeMembership.Role.OWNER)
+        self.person = Person.objects.create(tree=self.tree, first_name="Olga", last_name="K")
+
+    def test_event_creation(self):
+        event = Event.objects.create(
+            person=self.person,
+            event_type=Event.Type.BIRTH,
+            event_date=date(1990, 1, 1),
+            place="Moscow",
+        )
+        self.assertEqual(event.person_id, self.person.id)
+
+    def test_completeness_score(self):
+        c = calculate_person_completeness(self.person)
+        self.assertLess(c.score, 100)

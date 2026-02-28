@@ -1,6 +1,8 @@
 from django.urls import path
 
 from .views import (
+    EventCreateView,
+    EventTimelineView,
     PersonCreateView,
     PersonDeleteView,
     PersonListView,
@@ -16,4 +18,6 @@ urlpatterns = [
     path("persons/<int:pk>/delete/", PersonDeleteView.as_view(), name="person-delete"),
     path("relationships/", RelationshipListView.as_view(), name="relationship-list"),
     path("relationships/new/", RelationshipCreateView.as_view(), name="relationship-create"),
+    path("events/", EventTimelineView.as_view(), name="event-timeline"),
+    path("events/new/", EventCreateView.as_view(), name="event-create"),
 ]
