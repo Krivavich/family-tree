@@ -1,49 +1,41 @@
-# Family Tree — Next Iteration (Security + Reliability + Liquid Glass UI)
+# Family Tree Platform — Developer README
 
-В этой итерации проект усилен в трёх направлениях: безопасность, надёжность бизнес-логики и современный визуальный стиль Liquid Glass.
+Этот документ предназначен для разработчиков проекта Family Tree.
 
-## Что сделано
+## 1. Что это за проект
 
-### 1) Production-oriented 2FA + device binding
-- Поддержаны устройства 2FA: `email`, `sms`, `totp` (`TwoFactorDevice`).
-- Поддержаны доверенные устройства (`TrustedDevice`) с привязкой к `user-agent`/`ip` и TTL.
-- Логин может пропускать 2FA только при валидном `trusted_device_token` и совпадении device fingerprint.
-- Для TOTP добавлена встроенная верификация (без внешней зависимости).
-- Для email/sms сохранён интеграционный hook `send_2fa_code`.
-- Анти-спам выдачи challenge сохранён (60 секунд).
+Family Tree — web-платформа для совместного построения генеалогического древа:
+- пользователи создают деревья;
+- приглашают родственников;
+- добавляют персон, связи, факты, медиа;
+- предлагают правки и согласовывают их;
+- используют API-first архитектуру для web/mobile клиентов.
 
-### 2) ProposedChange merge-flow
-- Добавлен transactional apply/reject сервис.
-- API actions:
-  - `POST /api/proposed-changes/{id}/approve/`
-  - `POST /api/proposed-changes/{id}/reject/`
-- Одобрение owner-ом дерева применяет whitelisted поля в транзакции.
+Технологии ядра:
+- Python + Django
+- Django REST Framework
+- PostgreSQL / SQLite (dev)
+- JWT + 2FA
+- Celery + Redis
+- S3/MinIO (опционально)
 
-### 3) Media security + preview
-- Добавлена server-side валидация загрузок:
-  - лимит размера,
-  - сигнатура EICAR (базовый AV guard).
-- `MediaAsset` валидируется на `save()`.
-- `generate_media_preview` генерирует JPG preview через Pillow (fallback-safe).
+---
 
-### 4) GEDCOM parser улучшен
-- Импорт парсит `INDI`, `NAME`, `BIRT/DEAT DATE`, `FAM`, `HUSB/CHIL`.
-- Создаются `Person` и parent-child `Relationship` при импорте.
+## 2. Структура репозитория
 
-### 5) Тестирование
-- Добавлены unit/integration tests для:
-  - 2FA hashing/TOTP/trusted-device механики,
-  - merge-flow предложенных правок,
-  - media validation.
+- `apps/users` — кастомная модель пользователя.
+- `apps/authentication` — 2FA, trusted devices, auth API.
+- `apps/genealogy` — бизнес-домен (Tree/Person/Relationship/Fact/Media/ProposedChange).
+- `apps/audit` — audit log и middleware/signals.
+- `config` — настройки Django, роутинг, WSGI/ASGI.
+- `templates` — web-интерфейс (Liquid Glass UI).
+- `docs` — пользовательская, техническая и эксплуатационная документация.
 
-### 6) UI / Design
-- Полностью обновлён base-стиль в формате **Liquid Glass**:
-  - градиентный фон,
-  - стеклянные карточки (`backdrop-filter`),
-  - «жидкие» скруглённые элементы,
-  - glow/blob-акценты и улучшенная визуальная иерархия.
+---
 
-## Запуск
+## 3. Быстрый старт для разработчика
+
+### 3.1 Локально (SQLite)
 ```bash
 python -m venv .venv
 source .venv/bin/activate
@@ -54,7 +46,55 @@ python manage.py createsuperuser
 python manage.py runserver
 ```
 
-## Инфраструктура dev
+### 3.2 Локально (PostgreSQL + Redis + MinIO)
 ```bash
 docker compose up -d db redis minio
+python manage.py migrate
+python manage.py runserver
 ```
+
+---
+
+## 4. Команды разработки
+
+```bash
+python manage.py runserver
+python manage.py migrate
+python manage.py test
+python manage.py test apps.authentication apps.genealogy
+python manage.py export_gedcom <tree_id> --output tree.ged
+python manage.py import_gedcom <tree_id> <input.ged>
+```
+
+---
+
+## 5. Важные переменные окружения
+
+Смотрите `.env.example`. Ключевые:
+- `DJANGO_SECRET_KEY`
+- `DJANGO_DEBUG`
+- `DJANGO_ALLOWED_HOSTS`
+- `POSTGRES_*`
+- `USE_SQLITE`
+- `USE_S3`, `AWS_*`
+- `CELERY_BROKER_URL`, `CELERY_RESULT_BACKEND`
+
+---
+
+## 6. Безопасность (для разработчика)
+
+- Не храните секреты в git.
+- Для production выставляйте `DJANGO_DEBUG=0`.
+- Настройте HTTPS, secure cookies, HSTS.
+- Используйте реальные провайдеры 2FA каналов (email/SMS/TOTP app).
+- Перед релизом выполняйте миграции и тесты.
+
+---
+
+## 7. Документация в папке `docs`
+
+- `docs/USER_HELP_RU.md` — инструкция для пользователя.
+- `docs/GENEALOGY_MAP_LOGIC_RU.md` — логика генеалогической модели.
+- `docs/DEPLOY_HOSTING_RU.md` — пошаговый деплой на shared hosting.
+- `docs/DEPLOY_VPS_RU.md` — пошаговый production деплой на VPS.
+- `docs/INFRA_REQUIREMENTS_RU.md` — требования к инфраструктуре.
