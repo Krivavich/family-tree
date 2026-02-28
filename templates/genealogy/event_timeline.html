@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}Таймлайн | Family Tree{% endblock %}
+{% block content %}
+<div class="card glass row" style="justify-content:space-between;">
+  <div>
+    <h1 style="margin-bottom:6px;">Исторический таймлайн семьи</h1>
+    <div class="muted">События помогают видеть эволюцию рода во времени и географии.</div>
+  </div>
+  <a class="btn" href="/events/new/">+ Добавить событие</a>
+</div>
+{% for event in object_list %}
+  <div class="card glass">
+    <div class="row" style="justify-content:space-between;">
+      <strong>{{ event.person }}</strong>
+      <span class="badge">{{ event.get_event_type_display }}</span>
+    </div>
+    <div class="muted">{{ event.event_date|default:"дата не указана" }} · {{ event.place|default:"место не указано" }}</div>
+    {% if event.description %}<div style="margin-top:8px;">{{ event.description }}</div>{% endif %}
+    {% if event.source_reference %}<div class="muted" style="margin-top:6px;">Источник: {{ event.source_reference }}</div>{% endif %}
+  </div>
+{% empty %}
+  <div class="card glass">Событий пока нет.</div>
+{% endfor %}
+{% endblock %}
