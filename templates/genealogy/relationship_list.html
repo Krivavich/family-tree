@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}Связи | Family Tree{% endblock %}
+{% block content %}
+<div class="row" style="justify-content:space-between;">
+  <h1>Родственные связи</h1>
+  <a class="btn" href="/relationships/new/">+ Добавить связь</a>
+</div>
+{% for rel in object_list %}
+  <div class="card">{{ rel.from_person }} → <strong>{{ rel.get_relation_type_display }}</strong> → {{ rel.to_person }}</div>
+{% empty %}
+  <div class="card">Связей пока нет.</div>
+{% endfor %}
+{% endblock %}
