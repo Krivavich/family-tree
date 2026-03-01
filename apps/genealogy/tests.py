@@ -4,6 +4,7 @@ from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import RequestFactory, TestCase
+from django.urls import reverse
 
 from .api import EventSerializer, PersonSerializer
 from .forms import EventForm, PersonForm, RelationshipForm
@@ -138,3 +139,28 @@ class PersonSerializerCreateTests(TestCase):
         self.assertTrue(serializer.is_valid(), serializer.errors)
         person = serializer.save()
         self.assertEqual(person.tree_id, self.tree.id)
+
+
+class ApiHtmlRedirectTests(TestCase):
+    def setUp(self):
+        User = get_user_model()
+        self.owner = User.objects.create_user(username="owner6", password="pass-12345")
+        self.tree = Tree.objects.create(name="Tree6", owner=self.owner)
+        TreeMembership.objects.create(tree=self.tree, user=self.owner, role=TreeMembership.Role.OWNER)
+        Person.objects.create(tree=self.tree, first_name="Тест", last_name="Пользователь")
+
+    def test_api_persons_html_accept_redirects_to_web_page(self):
+        self.client.force_login(self.owner)
+        response = self.client.get("/api/persons/", HTTP_ACCEPT="text/html")
+        self.assertRedirects(response, reverse("genealogy:person-list"), fetch_redirect_response=False)
+
+    def test_api_persons_html_accept_with_format_json_is_not_redirected(self):
+        self.client.force_login(self.owner)
+        response = self.client.get("/api/persons/?format=json", HTTP_ACCEPT="application/json")
+        self.assertEqual(response.status_code, 200)
+
+    def test_api_persons_json_accept_returns_json_payload(self):
+        self.client.force_login(self.owner)
+        response = self.client.get("/api/persons/", HTTP_ACCEPT="application/json")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response["Content-Type"].split(";")[0], "application/json")

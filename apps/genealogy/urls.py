@@ -11,6 +11,8 @@ from .views import (
     RelationshipListView,
 )
 
+app_name = "genealogy"
+
 urlpatterns = [
     path("", PersonListView.as_view(), name="person-list"),
     path("persons/new/", PersonCreateView.as_view(), name="person-create"),

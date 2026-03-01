@@ -26,7 +26,7 @@ class PersonCreateView(LoginRequiredMixin, CreateView):
     model = Person
     form_class = PersonForm
     template_name = "genealogy/person_form.html"
-    success_url = reverse_lazy("person-list")
+    success_url = reverse_lazy("genealogy:person-list")
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
@@ -38,7 +38,7 @@ class PersonUpdateView(LoginRequiredMixin, UpdateView):
     model = Person
     form_class = PersonForm
     template_name = "genealogy/person_form.html"
-    success_url = reverse_lazy("person-list")
+    success_url = reverse_lazy("genealogy:person-list")
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
@@ -52,7 +52,7 @@ class PersonUpdateView(LoginRequiredMixin, UpdateView):
 class PersonDeleteView(LoginRequiredMixin, DeleteView):
     model = Person
     template_name = "genealogy/person_confirm_delete.html"
-    success_url = reverse_lazy("person-list")
+    success_url = reverse_lazy("genealogy:person-list")
 
     def get_queryset(self):
         return Person.objects.filter(tree__memberships__user=self.request.user).distinct()
@@ -72,7 +72,7 @@ class RelationshipCreateView(LoginRequiredMixin, CreateView):
     model = Relationship
     form_class = RelationshipForm
     template_name = "genealogy/relationship_form.html"
-    success_url = reverse_lazy("relationship-list")
+    success_url = reverse_lazy("genealogy:relationship-list")
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
@@ -92,7 +92,7 @@ class EventCreateView(LoginRequiredMixin, CreateView):
     model = Event
     form_class = EventForm
     template_name = "genealogy/event_form.html"
-    success_url = reverse_lazy("event-timeline")
+    success_url = reverse_lazy("genealogy:event-timeline")
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()

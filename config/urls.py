@@ -14,7 +14,7 @@ router.register("proposed-changes", ProposedChangeViewSet, basename="proposed-ch
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("accounts/", include("django.contrib.auth.urls")),
-    path("", include("apps.genealogy.urls")),
+    path("", include(("apps.genealogy.urls", "genealogy"), namespace="genealogy")),
     path("api/auth/", include("apps.authentication.urls")),
     path("api/", include(router.urls)),
     path("api/schema/", get_schema_view(title="Family Tree API", version="1.4.0"), name="openapi-schema"),
