@@ -38,9 +38,9 @@ class TreeMembership(models.Model):
 
 class Person(models.Model):
     class Privacy(models.TextChoices):
-        PUBLIC = "public", "Public"
-        FAMILY = "family", "Family"
-        PRIVATE = "private", "Private"
+        PUBLIC = "public", "Публично"
+        FAMILY = "family", "Семья"
+        PRIVATE = "private", "Приватно"
 
     tree = models.ForeignKey(Tree, on_delete=models.CASCADE, related_name="persons")
     first_name = models.CharField(max_length=120)
@@ -67,8 +67,8 @@ class Person(models.Model):
 
 class Relationship(models.Model):
     class Type(models.TextChoices):
-        PARENT = "parent", "Parent"
-        SPOUSE = "spouse", "Spouse"
+        PARENT = "parent", "Родитель"
+        SPOUSE = "spouse", "Супруг(а)"
 
     tree = models.ForeignKey(Tree, on_delete=models.CASCADE, related_name="relationships")
     from_person = models.ForeignKey(Person, on_delete=models.CASCADE, related_name="outgoing_relationships")
@@ -121,7 +121,7 @@ class Fact(models.Model):
     person = models.ForeignKey(Person, on_delete=models.CASCADE, related_name="facts")
     key = models.CharField(max_length=120)
     value = models.TextField()
-    confidence = models.CharField(max_length=1, choices=(("A", "Document"), ("B", "Witness"), ("C", "Family lore")), default="C")
+    confidence = models.CharField(max_length=1, choices=(("A", "Документ"), ("B", "Свидетель"), ("C", "Семейное предание")), default="C")
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
@@ -146,9 +146,9 @@ class FactVersion(models.Model):
 
 class ProposedChange(models.Model):
     class Status(models.TextChoices):
-        PENDING = "pending", "Pending"
-        APPROVED = "approved", "Approved"
-        REJECTED = "rejected", "Rejected"
+        PENDING = "pending", "Ожидает"
+        APPROVED = "approved", "Одобрено"
+        REJECTED = "rejected", "Отклонено"
 
     tree = models.ForeignKey(Tree, on_delete=models.CASCADE, related_name="proposed_changes")
     proposer = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="proposed_changes")
@@ -172,12 +172,12 @@ class ProposedChange(models.Model):
 
 class Event(models.Model):
     class Type(models.TextChoices):
-        BIRTH = "birth", "Birth"
-        MARRIAGE = "marriage", "Marriage"
-        DEATH = "death", "Death"
-        MOVE = "move", "Move"
-        EDUCATION = "education", "Education"
-        WORK = "work", "Work"
+        BIRTH = "birth", "Рождение"
+        MARRIAGE = "marriage", "Брак"
+        DEATH = "death", "Смерть"
+        MOVE = "move", "Переезд"
+        EDUCATION = "education", "Образование"
+        WORK = "work", "Работа"
 
     person = models.ForeignKey(Person, on_delete=models.CASCADE, related_name="events")
     event_type = models.CharField(max_length=20, choices=Type.choices)

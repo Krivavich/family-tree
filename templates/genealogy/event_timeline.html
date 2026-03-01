@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Таймлайн | Family Tree{% endblock %}
+{% block title %}Таймлайн | Семейное древо{% endblock %}
 {% block content %}
 <div class="card glass row" style="justify-content:space-between;">
   <div>
@@ -14,7 +14,7 @@
       <strong>{{ event.person }}</strong>
       <span class="badge">{{ event.get_event_type_display }}</span>
     </div>
-    <div class="muted">{{ event.event_date|default:"дата не указана" }} · {{ event.place|default:"место не указано" }}</div>
+    <div class="muted">{{ event.event_date|date:"d.m.Y"|default:"дата не указана" }} · {{ event.place|default:"место не указано" }}</div>
     {% if event.description %}<div style="margin-top:8px;">{{ event.description }}</div>{% endif %}
     {% if event.source_reference %}<div class="muted" style="margin-top:6px;">Источник: {{ event.source_reference }}</div>{% endif %}
   </div>
