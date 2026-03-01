@@ -130,6 +130,8 @@ CSRF_COOKIE_HTTPONLY = os.getenv("DJANGO_CSRF_COOKIE_HTTPONLY", "0") == "1"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
+ENABLE_BROWSABLE_API = os.getenv("DJANGO_ENABLE_BROWSABLE_API", "0") == "1"
+
 REST_FRAMEWORK = {
     "DEFAULT_SCHEMA_CLASS": "rest_framework.schemas.openapi.AutoSchema",
     "DEFAULT_PERMISSION_CLASSES": ["rest_framework.permissions.IsAuthenticated"],
@@ -137,6 +139,7 @@ REST_FRAMEWORK = {
         "rest_framework_simplejwt.authentication.JWTAuthentication",
         "rest_framework.authentication.SessionAuthentication",
     ],
+    "DEFAULT_RENDERER_CLASSES": ["rest_framework.renderers.JSONRenderer"],
     "DEFAULT_THROTTLE_CLASSES": [
         "rest_framework.throttling.AnonRateThrottle",
         "rest_framework.throttling.UserRateThrottle",
@@ -148,6 +151,9 @@ REST_FRAMEWORK = {
         "auth_2fa_verify": "15/min",
     },
 }
+
+if ENABLE_BROWSABLE_API:
+    REST_FRAMEWORK["DEFAULT_RENDERER_CLASSES"].append("rest_framework.renderers.BrowsableAPIRenderer")
 
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=15),

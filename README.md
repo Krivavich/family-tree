@@ -85,6 +85,7 @@ python manage.py import_gedcom <tree_id> <input.ged>
 
 - Не храните секреты в git.
 - Для production выставляйте `DJANGO_DEBUG=0`.
+- Browsable API отключён по умолчанию, чтобы пользователи не попадали на DRF HTML-формы вместо web UI; для включения выставьте `DJANGO_ENABLE_BROWSABLE_API=1`.
 - Настройте HTTPS, secure cookies, HSTS.
 - Используйте реальные провайдеры 2FA каналов (email/SMS/TOTP app).
 - Перед релизом выполняйте миграции и тесты.
