@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}Новое событие | Family Tree{% endblock %}
+{% block content %}
+<div class="card glass">
+  <h1>Новое событие</h1>
+  <p class="muted">Добавьте исторический факт с датой, местом и источником.</p>
+  <form method="post">{% csrf_token %}
+    {{ form.as_p }}
+    <div class="row">
+      <button type="submit" class="btn">Сохранить</button>
+      <a href="/events/" class="btn btn-soft">Отмена</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

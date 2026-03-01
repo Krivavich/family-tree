@@ -1,0 +1,74 @@
+openapi: 3.0.3
+info:
+  title: Family Tree API
+  version: 1.4.0
+  description: API with production-oriented 2FA, trusted devices, event timeline and merge-flow moderation.
+servers:
+  - url: /api
+paths:
+  /auth/token/:
+    post:
+      summary: Login and either trusted-device auth or 2FA challenge start
+      responses:
+        '200': { description: 2FA challenge created or JWT issued }
+  /auth/2fa/verify/:
+    post:
+      summary: Verify TOTP/challenge and issue access/refresh tokens
+      responses:
+        '200': { description: OK }
+  /auth/token/refresh/:
+    post:
+      summary: Refresh JWT token
+      responses:
+        '200': { description: OK }
+  /auth/logout/:
+    post:
+      summary: Blacklist refresh token
+      responses:
+        '205': { description: Logged out }
+  /persons/:
+    get:
+      summary: List persons
+      responses:
+        '200': { description: OK }
+    post:
+      summary: Create person
+      responses:
+        '201': { description: Created }
+  /relationships/:
+    get:
+      summary: List relationships
+      responses:
+        '200': { description: OK }
+    post:
+      summary: Create relationship
+      responses:
+        '201': { description: Created }
+  /events/:
+    get:
+      summary: List timeline events
+      responses:
+        '200': { description: OK }
+    post:
+      summary: Create timeline event
+      responses:
+        '201': { description: Created }
+  /proposed-changes/:
+    get:
+      summary: List proposed changes
+      responses:
+        '200': { description: OK }
+    post:
+      summary: Submit proposed change
+      responses:
+        '201': { description: Created }
+  /proposed-changes/{id}/approve/:
+    post:
+      summary: Approve and apply proposed change (owner)
+      responses:
+        '200': { description: Approved }
+  /proposed-changes/{id}/reject/:
+    post:
+      summary: Reject proposed change (owner)
+      responses:
+        '200': { description: Rejected }
