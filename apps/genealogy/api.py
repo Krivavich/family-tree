@@ -11,6 +11,40 @@ class PersonSerializer(serializers.ModelSerializer):
     class Meta:
         model = Person
         fields = ["id", "tree", "first_name", "last_name", "birth_date", "death_date", "biography", "privacy"]
+        extra_kwargs = {
+            "tree": {"required": False, "label": "Древо"},
+            "first_name": {"label": "Имя"},
+            "last_name": {"label": "Фамилия"},
+            "birth_date": {"label": "Дата рождения"},
+            "death_date": {"label": "Дата смерти"},
+            "biography": {"label": "Биография"},
+            "privacy": {"label": "Приватность"},
+        }
+
+    def validate(self, attrs):
+        request = self.context.get("request")
+        if not request or not request.user.is_authenticated:
+            return attrs
+
+        tree = attrs.get("tree")
+        if tree is None:
+            membership = TreeMembership.objects.filter(
+                user=request.user,
+                role__in=[TreeMembership.Role.OWNER, TreeMembership.Role.EDITOR],
+            ).select_related("tree").first()
+            if membership:
+                attrs["tree"] = membership.tree
+            else:
+                raise serializers.ValidationError({"tree": "Нет доступного дерева для создания персоны."})
+            return attrs
+
+        if not TreeMembership.objects.filter(
+            tree=tree,
+            user=request.user,
+            role__in=[TreeMembership.Role.OWNER, TreeMembership.Role.EDITOR],
+        ).exists():
+            raise serializers.ValidationError({"tree": "Недостаточно прав для записи в выбранное дерево."})
+        return attrs
 
 
 class RelationshipSerializer(serializers.ModelSerializer):

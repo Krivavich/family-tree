@@ -5,7 +5,7 @@ from django.core.exceptions import ValidationError
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import RequestFactory, TestCase
 
-from .api import EventSerializer
+from .api import EventSerializer, PersonSerializer
 from .forms import EventForm, PersonForm, RelationshipForm
 from .models import Event, MediaAsset, Person, ProposedChange, Tree, TreeMembership
 from .services.insights import calculate_person_completeness
@@ -119,3 +119,22 @@ class AutoBootstrapTreeFormTests(TestCase):
         membership = TreeMembership.objects.filter(user=self.new_user).first()
         self.assertIsNotNone(membership)
         self.assertEqual(membership.role, TreeMembership.Role.OWNER)
+
+
+class PersonSerializerCreateTests(TestCase):
+    def setUp(self):
+        User = get_user_model()
+        self.owner = User.objects.create_user(username="owner5", password="pass-12345")
+        self.tree = Tree.objects.create(name="Tree5", owner=self.owner)
+        TreeMembership.objects.create(tree=self.tree, user=self.owner, role=TreeMembership.Role.OWNER)
+
+    def test_create_without_tree_uses_user_editable_tree(self):
+        request = RequestFactory().post("/api/persons/")
+        request.user = self.owner
+        serializer = PersonSerializer(
+            data={"first_name": "Сергей", "last_name": "Кривавич", "privacy": "family"},
+            context={"request": request},
+        )
+        self.assertTrue(serializer.is_valid(), serializer.errors)
+        person = serializer.save()
+        self.assertEqual(person.tree_id, self.tree.id)
