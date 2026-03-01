@@ -1,4 +1,5 @@
 from django import forms
+from django.db import transaction
 
 from .models import Event, Person, Relationship, Tree, TreeMembership
 
@@ -10,6 +11,22 @@ def editable_trees_for_user(user):
     ).distinct()
 
 
+def editable_trees_with_default_for_user(user):
+    """Return editable trees and bootstrap a personal tree for a new user.
+
+    If user has no memberships at all, create a personal tree and owner membership
+    so required dropdowns in create forms are never empty for first-time owners.
+    """
+    trees = editable_trees_for_user(user)
+    if trees.exists() or TreeMembership.objects.filter(user=user).exists():
+        return trees
+
+    with transaction.atomic():
+        tree = Tree.objects.create(name=f"{user.username} Family Tree", owner=user)
+        TreeMembership.objects.create(tree=tree, user=user, role=TreeMembership.Role.OWNER)
+    return editable_trees_for_user(user)
+
+
 class PersonForm(forms.ModelForm):
     class Meta:
         model = Person
@@ -19,7 +36,7 @@ class PersonForm(forms.ModelForm):
         user = kwargs.pop("user", None)
         super().__init__(*args, **kwargs)
         if user and user.is_authenticated:
-            self.fields["tree"].queryset = editable_trees_for_user(user)
+            self.fields["tree"].queryset = editable_trees_with_default_for_user(user)
 
 
 class RelationshipForm(forms.ModelForm):
@@ -31,7 +48,7 @@ class RelationshipForm(forms.ModelForm):
         user = kwargs.pop("user", None)
         super().__init__(*args, **kwargs)
         if user and user.is_authenticated:
-            trees = editable_trees_for_user(user)
+            trees = editable_trees_with_default_for_user(user)
             self.fields["tree"].queryset = trees
             self.fields["from_person"].queryset = Person.objects.filter(tree__in=trees)
             self.fields["to_person"].queryset = Person.objects.filter(tree__in=trees)
@@ -46,4 +63,4 @@ class EventForm(forms.ModelForm):
         user = kwargs.pop("user", None)
         super().__init__(*args, **kwargs)
         if user and user.is_authenticated:
-            self.fields["person"].queryset = Person.objects.filter(tree__in=editable_trees_for_user(user)).distinct()
+            self.fields["person"].queryset = Person.objects.filter(tree__in=editable_trees_with_default_for_user(user)).distinct()

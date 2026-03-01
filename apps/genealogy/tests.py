@@ -104,3 +104,18 @@ class RoleWriteRestrictionTests(TestCase):
         )
         self.assertFalse(serializer.is_valid())
         self.assertIn("person", serializer.errors)
+
+
+class AutoBootstrapTreeFormTests(TestCase):
+    def setUp(self):
+        User = get_user_model()
+        self.new_user = User.objects.create_user(username="brandnew", password="pass-12345")
+
+    def test_person_form_bootstraps_personal_tree_for_new_user(self):
+        self.assertEqual(TreeMembership.objects.filter(user=self.new_user).count(), 0)
+        form = PersonForm(user=self.new_user)
+        self.assertEqual(form.fields["tree"].queryset.count(), 1)
+
+        membership = TreeMembership.objects.filter(user=self.new_user).first()
+        self.assertIsNotNone(membership)
+        self.assertEqual(membership.role, TreeMembership.Role.OWNER)
