@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}Новая связь | Семейное древо{% endblock %}
+{% block content %}
+<div class="card glass">
+  <h1>Новая связь</h1>
+  <p class="muted">Свяжите родственников типом отношения.</p>
+  <form method="post">{% csrf_token %}
+    {{ form.as_p }}
+    <div class="row">
+      <button type="submit" class="btn">Сохранить</button>
+      <a href="/relationships/" class="btn btn-soft">Отмена</a>
+    </div>
+  </form>
+</div>
+{% endblock %}
