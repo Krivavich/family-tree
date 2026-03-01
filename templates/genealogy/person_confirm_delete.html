@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}Удаление | Семейное древо{% endblock %}
+{% block content %}
+<div class="card glass">
+  <h1>Удаление</h1>
+  <p>Удалить <strong>{{ object }}</strong>? Это действие нельзя отменить.</p>
+  <form method="post">{% csrf_token %}
+    <div class="row">
+      <button type="submit" class="btn btn-danger">Удалить</button>
+      <a href="/" class="btn btn-soft">Отмена</a>
+    </div>
+  </form>
+</div>
+{% endblock %}
